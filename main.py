@@ -24,33 +24,41 @@ def download_pic(pic_number, download_url):
     
 def post_pic(access_token, owner_id, group_id, attachment_type, filename, message):
     attachments = get_params_for_safe_photo_on_wall(access_token, group_id, filename, attachment_type)
-    url = 'https://api.vk.com/method/wall.post?access_token={}&v=5.92&owner_id={}&group_id={}&from_group=1&attachments={}&message={}'.format(access_token, owner_id, group_id, attachments, message)
-    response = requests.post(url)
+    payload = {'access_token': access_token,
+             'v': 5.92,
+             'owner_id': owner_id,
+             'group_id':  group_id,
+             'from_group': 1,
+             'attachments': attachments,
+             'message': message}
+    
+    url = 'https://api.vk.com/method/wall.post'
+    response = requests.post(url, params=payload)
     os.remove(filename)
 
 def get_params_for_safe_photo_on_wall(access_token, group_id, filename, attachment_type):
-    url = 'https://api.vk.com/method/photos.getWallUploadServer?access_token={}&v=5.92&group_id={}'.format(access_token, group_id)
-    response = requests.get(url)
+    payload = {'access_token': access_token,
+              'v': 5.92,
+              'group_id':  group_id}
+    url = 'https://api.vk.com/method/photos.getWallUploadServer'
+    response = requests.get(url, params=payload)
     params_for_upload_xkcd = response.json()
 
 
-    image_file_descriptor = open(filename, 'rb')
-    files = {'photo': image_file_descriptor}
-    url = params_for_upload_xkcd['response']['upload_url']
+    with open(filename, 'rb') as image_file_descriptor:
+        files = {'photo': image_file_descriptor}
+        url = params_for_upload_xkcd['response']['upload_url']
+        response = requests.post(url, files=files)
+        upload_information = response.json()
     
-    response = requests.post(url, files=files)
-    upload_information = response.json()
-    image_file_descriptor.close()
+    photo_information = upload_information['photo']
+    server_information = upload_information['server']
+    hash_information = upload_information['hash']
     
-    photo = upload_information['photo']
-    server = upload_information['server']
-    hash = upload_information['hash']
-    
-    return get_information_for_post_on_wall(access_token, group_id, photo, server, hash, attachment_type)
+    return get_information_for_post_on_wall(access_token, group_id, photo_information, server_information, hash_information, attachment_type)
 
-def get_information_for_post_on_wall(access_token, group_id, photo, server, hash, attachment_type):
-    url = 'https://api.vk.com/method/photos.saveWallPhoto?access_token={}&v=5.92&group_id={}&photo={}&server={}&hash={}'.format(access_token, group_id, photo, server, hash)
-    
+def get_information_for_post_on_wall(access_token, group_id, photo_information, server_information, hash_information, attachment_type):
+    url = 'https://api.vk.com/method/photos.saveWallPhoto?access_token={}&v=5.92&group_id={}&photo={}&server={}&hash={}'.format(access_token, group_id, photo_information, server_information, hash_information)
     response = requests.post(url)
     saveWallPhoto_params = response.json()
     attachment_media_id = saveWallPhoto_params['response'][0]['id']
