@@ -1,4 +1,3 @@
-
 from dotenv import load_dotenv
 import requests
 import random
@@ -58,8 +57,14 @@ def get_params_for_safe_photo_on_wall(access_token, group_id, filename, attachme
     return get_information_for_post_on_wall(access_token, group_id, photo_information, server_information, hash_information, attachment_type)
 
 def get_information_for_post_on_wall(access_token, group_id, photo_information, server_information, hash_information, attachment_type):
-    url = 'https://api.vk.com/method/photos.saveWallPhoto?access_token={}&v=5.92&group_id={}&photo={}&server={}&hash={}'.format(access_token, group_id, photo_information, server_information, hash_information)
-    response = requests.post(url)
+    url = 'https://api.vk.com/method/photos.saveWallPhoto'
+    payload = {'access_token': access_token,
+             'v': 5.92,
+             'photo': photo_information,
+             'group_id':  group_id,
+             'server': server_information,
+             'hash': hash_information}
+    response = requests.post(url, params=payload)
     saveWallPhoto_params = response.json()
     attachment_media_id = saveWallPhoto_params['response'][0]['id']
     attachment_owner_id = saveWallPhoto_params['response'][0]['owner_id']
